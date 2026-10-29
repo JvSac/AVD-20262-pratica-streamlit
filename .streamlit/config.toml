@@ -2,18 +2,18 @@
 # O tema pode ser trocado pelo menu ⋮ → Settings → Choose app theme.
 
 [theme]
-paddingTop = "0.5rem"     # espaço abaixo da barra do topo (valor entre aspas)
+paddingTop = "0.0rem"     # espaço abaixo da barra do topo (valor entre aspas)
 # font = "sans serif"     # "sans serif", "serif" ou "monospace"
 
 [theme.light]
-primaryColor = "#ff4b4b"            # cor de destaque (widgets, links)
+primaryColor = "#c1121f"            # cor de destaque (widgets, links): mesmo vermelho dos histogramas
 backgroundColor = "#ffffff"         # fundo da página
 secondaryBackgroundColor = "#f0f2f6"  # fundo da sidebar e de widgets
 textColor = "#31333f"               # cor do texto
 borderColor = "#d5dae5"
 
 [theme.dark]
-primaryColor = "#ff4b4b"
+primaryColor = "#c1121f"
 backgroundColor = "#0e1117"
 secondaryBackgroundColor = "#262730"
 textColor = "#fafafa"

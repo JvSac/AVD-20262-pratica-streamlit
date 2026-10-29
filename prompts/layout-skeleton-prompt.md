@@ -8,7 +8,7 @@ Preencha cada bloco e envie à ferramenta de IA.
 
 ## Entrada
 
-<!-- Anexe a imagem do rascunho e cite o caminho dela no repositório (ex.: prompts/rascunho_dashboard1.jpg). Informe também as colunas do dataset e as perguntas que o dashboard deve responder. -->
+<!-- Anexe a imagem do rascunho e cite o caminho dela no repositório (ex.: entregas/rascunho-dashboard1.jpg). Informe também as colunas do dataset e as perguntas que o dashboard deve responder. -->
 
 <!-- Opcional, se a ferramenta de IA não aceitar imagem ou interpretar mal o rascunho: descreva o layout em poucas linhas (ex.: sidebar à esquerda com 2 filtros; topo com 3 métricas; abaixo, 2 gráficos lado a lado). -->
 
