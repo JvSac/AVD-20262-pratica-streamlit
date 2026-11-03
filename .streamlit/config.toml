@@ -2,8 +2,12 @@
 # O tema pode ser trocado pelo menu ⋮ → Settings → Choose app theme.
 
 [theme]
-paddingTop = "0.0rem"     # espaço abaixo da barra do topo (valor entre aspas)
-# font = "sans serif"     # "sans serif", "serif" ou "monospace"
+base = "dark"
+primaryColor = "#3288bd"
+backgroundColor = "#0e1117"
+secondaryBackgroundColor = "#262730"
+textColor = "#fafafa"
+font = "sans serif"
 
 [theme.light]
 primaryColor = "#c1121f"            # cor de destaque (widgets, links): mesmo vermelho dos histogramas
