@@ -14,6 +14,7 @@ st.set_page_config(
 st.title("Saúde e falhas de baterias de veículos elétricos")
 
 
+# Variáveis quantitativas utilizadas na EDA.
 VARS_QUANT = [
     "vehicle_age_years",
     "battery_capacity_kwh",
@@ -57,7 +58,7 @@ def formatar_numero(valor, casas=2):
 
 
 def slider_intervalo(serie, titulo, chave):
-    """Cria um slider usando apenas valores numéricos finitos."""
+    """Cria um filtro de intervalo com valores numéricos finitos."""
     valores = serie.replace([np.inf, -np.inf], np.nan).dropna()
 
     if valores.empty:
@@ -105,6 +106,7 @@ def mostrar_dashboard1(dados, variaveis, intervalo):
 
     col_correlacao, col_distribuicao = st.columns(2)
 
+    # Heatmap de correlação.
     with col_correlacao:
         st.subheader("Correlação")
 
@@ -138,6 +140,7 @@ def mostrar_dashboard1(dados, variaveis, intervalo):
             dados_correlacao["variavel_x"] = (
                 dados_correlacao["variavel_x"].map(ROTULOS)
             )
+
             dados_correlacao["variavel_y"] = (
                 dados_correlacao["variavel_y"].map(ROTULOS)
             )
@@ -209,6 +212,7 @@ def mostrar_dashboard1(dados, variaveis, intervalo):
                     "Correlação não implica causalidade."
                 )
 
+    # Histograma.
     with col_distribuicao:
         st.subheader("Distribuição")
 
@@ -347,6 +351,7 @@ def mostrar_dashboard2(dados, tipos, intervalo):
     saude_media = filtrado["battery_health_percent"].mean()
     ciclos_medios = filtrado["cycle_count"].mean()
 
+    # Quatro indicadores.
     cartao1, cartao2, cartao3, cartao4 = st.columns(4)
 
     cartao1.metric(
@@ -387,17 +392,18 @@ def mostrar_dashboard2(dados, tipos, intervalo):
     st.caption(
         f"Indicadores calculados sobre "
         f"{formatar_numero(total, 0)} registros selecionados. "
-        "Médias ignoram valores ausentes e a proporção "
-        "considera somente classificações 0 ou 1."
+        "Médias ignoram valores ausentes; a proporção considera "
+        "somente classificações de falha iguais a 0 ou 1."
     )
 
+    # VISUAL 1: proporção de falhas por tipo.
     st.subheader("Proporção de falhas por tipo de veículo")
 
     base_falhas = filtrado.loc[
         filtrado["battery_failure"].isin([0, 1])
     ]
 
-    resumo = (
+    resumo_falhas = (
         base_falhas
         .groupby("vehicle_type", observed=True)
         .agg(
@@ -408,96 +414,303 @@ def mostrar_dashboard2(dados, tipos, intervalo):
         .reset_index()
     )
 
-    if resumo.empty:
+    if resumo_falhas.empty:
         st.info(
             "Não há classificações válidas de falha "
-            "para construir o gráfico."
+            "para construir este gráfico."
         )
-        return
 
-    grafico = (
-        alt.Chart(resumo)
-        .mark_bar(
-            color="#3288bd",
-            cornerRadiusTopLeft=4,
-            cornerRadiusTopRight=4,
-        )
-        .encode(
-            x=alt.X(
-                "vehicle_type:N",
-                title="Tipo de veículo",
-                sort=alt.SortField(
-                    field="proporcao_falhas",
-                    order="descending",
-                ),
-                axis=alt.Axis(labelAngle=0),
-            ),
-            y=alt.Y(
-                "proporcao_falhas:Q",
-                title="Registros com falha (%)",
-                axis=alt.Axis(format=".0%"),
-                scale=alt.Scale(zero=True),
-            ),
-            tooltip=[
-                alt.Tooltip(
+    else:
+        grafico_falhas = (
+            alt.Chart(resumo_falhas)
+            .mark_bar(
+                color="#3288bd",
+                cornerRadiusTopLeft=4,
+                cornerRadiusTopRight=4,
+            )
+            .encode(
+                x=alt.X(
                     "vehicle_type:N",
                     title="Tipo de veículo",
+                    sort=alt.SortField(
+                        field="proporcao_falhas",
+                        order="descending",
+                    ),
+                    axis=alt.Axis(labelAngle=0),
                 ),
-                alt.Tooltip(
-                    "registros:Q",
-                    title="Registros válidos",
-                    format=",d",
-                ),
-                alt.Tooltip(
-                    "com_falha:Q",
-                    title="Com falha",
-                    format=",d",
-                ),
-                alt.Tooltip(
+                y=alt.Y(
                     "proporcao_falhas:Q",
-                    title="Proporção com falha",
-                    format=".2%",
+                    title="Registros com falha (%)",
+                    axis=alt.Axis(format=".0%"),
+                    scale=alt.Scale(zero=True),
                 ),
-            ],
+                tooltip=[
+                    alt.Tooltip(
+                        "vehicle_type:N",
+                        title="Tipo de veículo",
+                    ),
+                    alt.Tooltip(
+                        "registros:Q",
+                        title="Registros válidos",
+                        format=",d",
+                    ),
+                    alt.Tooltip(
+                        "com_falha:Q",
+                        title="Com falha",
+                        format=",d",
+                    ),
+                    alt.Tooltip(
+                        "proporcao_falhas:Q",
+                        title="Proporção com falha",
+                        format=".2%",
+                    ),
+                ],
+            )
+            .properties(height=350)
         )
-        .properties(height=400)
-    )
 
-    st.altair_chart(
-        grafico,
-        use_container_width=True,
-    )
+        st.altair_chart(
+            grafico_falhas,
+            use_container_width=True,
+        )
+
+    col_saude, col_dispersao = st.columns(2)
+
+    # VISUAL 2: saúde média por tipo.
+    with col_saude:
+        st.subheader("Saúde média por tipo de veículo")
+
+        resumo_saude = (
+            filtrado
+            .groupby("vehicle_type", observed=True)
+            .agg(
+                saude_media=("battery_health_percent", "mean"),
+                registros_validos=("battery_health_percent", "count"),
+            )
+            .reset_index()
+            .dropna(subset=["saude_media"])
+        )
+
+        if resumo_saude.empty:
+            st.info(
+                "Não há valores válidos de saúde "
+                "para construir este gráfico."
+            )
+
+        else:
+            grafico_saude = (
+                alt.Chart(resumo_saude)
+                .mark_bar(
+                    color="#59a14f",
+                    cornerRadiusTopLeft=4,
+                    cornerRadiusTopRight=4,
+                )
+                .encode(
+                    x=alt.X(
+                        "vehicle_type:N",
+                        title="Tipo de veículo",
+                        sort=alt.SortField(
+                            field="saude_media",
+                            order="descending",
+                        ),
+                        axis=alt.Axis(labelAngle=-30),
+                    ),
+                    y=alt.Y(
+                        "saude_media:Q",
+                        title="Saúde média da bateria (%)",
+                        scale=alt.Scale(zero=True),
+                    ),
+                    tooltip=[
+                        alt.Tooltip(
+                            "vehicle_type:N",
+                            title="Tipo de veículo",
+                        ),
+                        alt.Tooltip(
+                            "saude_media:Q",
+                            title="Saúde média (%)",
+                            format=".2f",
+                        ),
+                        alt.Tooltip(
+                            "registros_validos:Q",
+                            title="Registros válidos",
+                            format=",d",
+                        ),
+                    ],
+                )
+                .properties(height=350)
+            )
+
+            st.altair_chart(
+                grafico_saude,
+                use_container_width=True,
+            )
+
+            st.caption(
+                "Compare a saúde média considerando também "
+                "a quantidade de registros de cada tipo."
+            )
+
+    # VISUAL 3: ciclos versus saúde da bateria.
+    with col_dispersao:
+        st.subheader("Ciclos × saúde da bateria")
+
+        pontos = (
+            filtrado[
+                [
+                    "cycle_count",
+                    "battery_health_percent",
+                    "battery_failure",
+                    "vehicle_type",
+                ]
+            ]
+            .dropna(
+                subset=[
+                    "cycle_count",
+                    "battery_health_percent",
+                ]
+            )
+            .copy()
+        )
+
+        if pontos.empty:
+            st.info(
+                "Não há registros com ciclos e saúde válidos "
+                "para construir a dispersão."
+            )
+
+        else:
+            pontos["classe_falha"] = (
+                pontos["battery_failure"]
+                .map(
+                    {
+                        0: "Sem falha",
+                        1: "Com falha",
+                    }
+                )
+                .fillna("Sem classificação")
+            )
+
+            # Usa todos os registros válidos da seleção.
+            # Dados inline evitam o limite padrão de linhas
+            # aplicado pelo Altair a DataFrames.
+            dados_pontos = alt.Data(
+                values=pontos[
+                    [
+                        "cycle_count",
+                        "battery_health_percent",
+                        "vehicle_type",
+                        "classe_falha",
+                    ]
+                ].to_dict(orient="records")
+            )
+
+            grafico_dispersao = (
+                alt.Chart(dados_pontos)
+                .mark_circle(
+                    size=35,
+                    opacity=0.4,
+                )
+                .encode(
+                    x=alt.X(
+                        "cycle_count:Q",
+                        title="Quantidade de ciclos",
+                        scale=alt.Scale(zero=True),
+                    ),
+                    y=alt.Y(
+                        "battery_health_percent:Q",
+                        title="Saúde da bateria (%)",
+                        scale=alt.Scale(zero=True),
+                    ),
+                    color=alt.Color(
+                        "classe_falha:N",
+                        title="Falha registrada",
+                        scale=alt.Scale(
+                            domain=[
+                                "Sem falha",
+                                "Com falha",
+                                "Sem classificação",
+                            ],
+                            range=[
+                                "#3288bd",
+                                "#f28e2b",
+                                "#9e9e9e",
+                            ],
+                        ),
+                        legend=alt.Legend(orient="bottom"),
+                    ),
+                    tooltip=[
+                        alt.Tooltip(
+                            "vehicle_type:N",
+                            title="Tipo de veículo",
+                        ),
+                        alt.Tooltip(
+                            "cycle_count:Q",
+                            title="Ciclos",
+                            format=".0f",
+                        ),
+                        alt.Tooltip(
+                            "battery_health_percent:Q",
+                            title="Saúde (%)",
+                            format=".2f",
+                        ),
+                        alt.Tooltip(
+                            "classe_falha:N",
+                            title="Classificação",
+                        ),
+                    ],
+                )
+                .properties(height=350)
+                .interactive()
+            )
+
+            st.altair_chart(
+                grafico_dispersao,
+                use_container_width=True,
+            )
+
+            st.caption(
+                f"Cada ponto representa um dos "
+                f"{formatar_numero(len(pontos), 0)} registros "
+                "com ciclos e saúde válidos. "
+                "Use o mouse para explorar e ampliar o gráfico."
+            )
 
     st.caption(
-        "Passe o mouse sobre as barras para conferir "
-        "as contagens e os percentuais. "
-        "Os resultados descrevem a amostra selecionada, "
-        "sem prever falhas futuras."
+        "Os três gráficos usam os mesmos filtros de tipo e idade. "
+        "Associações observadas não comprovam causalidade "
+        "nem representam previsões de falhas futuras."
     )
 
     with st.expander("Conferir os cálculos por tipo"):
-        tabela = resumo.copy()
-        tabela["percentual_falhas"] = (
-            tabela["proporcao_falhas"] * 100
-        )
+        if resumo_falhas.empty:
+            st.info("Não há classificações válidas de falha.")
 
-        st.dataframe(
-            tabela[
-                [
-                    "vehicle_type",
-                    "registros",
-                    "com_falha",
-                    "percentual_falhas",
+        else:
+            tabela = resumo_falhas.copy()
+
+            tabela["percentual_falhas"] = (
+                tabela["proporcao_falhas"] * 100
+            )
+
+            st.dataframe(
+                tabela[
+                    [
+                        "vehicle_type",
+                        "registros",
+                        "com_falha",
+                        "percentual_falhas",
+                    ]
                 ]
-            ].rename(
-                columns={
-                    "vehicle_type": "Tipo de veículo",
-                    "registros": "Registros válidos",
-                    "com_falha": "Com falha",
-                    "percentual_falhas": "Falhas (%)",
-                }
-            ).round(2)
-        )
+                .rename(
+                    columns={
+                        "vehicle_type": "Tipo de veículo",
+                        "registros": "Registros válidos",
+                        "com_falha": "Com falha",
+                        "percentual_falhas": "Falhas (%)",
+                    }
+                )
+                .round(2)
+            )
 
 
 # Carregamento do CSV tratado.
@@ -516,7 +729,7 @@ except (
     st.stop()
 
 
-# Validação das colunas necessárias para os dois dashboards.
+# Validação das colunas necessárias.
 colunas_necessarias = VARS_QUANT + [
     "vehicle_type",
     "battery_failure",
@@ -542,11 +755,15 @@ if any(
     not pd.api.types.is_numeric_dtype(df[col])
     for col in VARS_QUANT
 ):
-    st.error("As variáveis quantitativas precisam ser numéricas.")
+    st.error(
+        "As variáveis quantitativas precisam ser numéricas."
+    )
     st.stop()
+
 
 # Converte infinitos em ausentes para os cálculos.
 df = df.copy()
+
 df[VARS_QUANT] = df[VARS_QUANT].replace(
     [np.inf, -np.inf],
     np.nan,
@@ -579,7 +796,10 @@ with st.sidebar:
 
     with st.expander("Dashboard 2", expanded=True):
         tipos_disponiveis = sorted(
-            df["vehicle_type"].dropna().unique().tolist()
+            df["vehicle_type"]
+            .dropna()
+            .unique()
+            .tolist()
         )
 
         tipos_selecionados = st.multiselect(
@@ -596,6 +816,7 @@ with st.sidebar:
         )
 
 
+# Abas da aplicação.
 aba1, aba2 = st.tabs(
     [
         "Dashboard 1 — Correlação e distribuição",
