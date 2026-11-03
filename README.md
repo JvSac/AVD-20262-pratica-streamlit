@@ -107,3 +107,10 @@ A pasta [prompts/](prompts) guarda só o que é sobre **uso de IA**: o template 
 ## Pasta `entregas/`
 
 A pasta [entregas/](entregas) guarda os artefatos de entrega que não são sobre IA: os rascunhos de layout de cada dashboard (`.jpg` ou `.png`) e a justificativa das métricas do Dashboard 2. Veja [entregas/README.md](entregas/README.md) para o detalhe de cada arquivo e o checklist por aula. Não coloque esses arquivos no `.gitignore`.
+
+## Aplicação publicada
+
+[Acessar o dashboard de saúde e falhas de baterias](https://avd-20262-pratica-app-menvqeqyshyx8quyjqx2ye.streamlit.app/)
+
+- **Dashboard 1:** correlação e distribuição das variáveis.
+- **Dashboard 2:** quatro indicadores e três gráficos, com filtros por tipo e idade do veículo.
